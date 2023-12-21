@@ -1,0 +1,107 @@
+PROGRAM prog_imp_sem PROG_ARM = 1
+
+-- Declara‡ão de constantes:
+CONST
+	nsem = 12	-- n£mero de sementes a serem implantadas
+	tam_sem = 3	-- tamanho da semente, em mm
+	padz = 11.6	-- espa‡amento z-tool, em mm
+	pady = 12.5	-- espa‡amento y-tool, em mm
+  
+-- Declara‡ão de vari veis:
+VAR
+	home, recharge, aux, ref : POSITION
+  	i : INTEGER
+  
+-- Rotina para inserir uma semente:
+ROUTINE INSERE
+BEGIN
+ 	PULSE $DOUT[1] FOR 100
+	DELAY 10
+	MOVE RELATIVE VEC(0, 0, -tam_sem) IN TOOL
+ 	--WAIT FOR $DIN[1] = ON
+  	--WAIT FOR $DIN[1] = OFF
+END INSERE
+  
+-- Rotina para carregar uma semente:
+ROUTINE CARREGA
+BEGIN
+  	PULSE $DOUT[1] FOR 100
+  	DELAY 100
+  	PULSE $DOUT[1] FOR 100
+  	WAIT FOR $DIN[1] = ON
+  	WAIT FOR $DIN[1] = OFF
+END CARREGA
+  
+  -- Rotina principal:
+BEGIN  
+  	-- Vai para HOME:
+	MOVE TO home
+	
+	-- Quando necess rio a posi‡ão de recarga descomentar a linha do MOVE:
+  	-- Vai para posi‡ão de recarga:
+	--MOVE to recharge
+  
+  	-- Desloca o ˆmbolo para acomodar as nsem:
+	FOR i:=1 TO nsem DO
+		CARREGA
+	ENDFOR
+  
+  	-- Acende o led e aguarda pressionar o botão para prosseguir:
+	$FDOUT[24] := ON
+	WAIT FOR $FDIN[24] = ON
+	$FDOUT[24] := OFF
+  
+  	-- Vai para posi‡ão auxiliar, acende o led e aguarda novo comando para iniciar o implante:
+	MOVE TO aux
+	$FDOUT[24] := ON
+	WAIT FOR $FDIN[24] = ON
+	$FDOUT[24] := OFF
+  
+  	-- Inicia o agulhamento, seguindo ordem de agulhamento baseado em uma posi‡ão referencial (centro, encostado na gelatina):
+	$LIN_SPD := 0.003	--Velocidade linear para acompanhar a inser‡ão da semente
+
+  	-- Agulhamento central:
+	MOVE LINEAR TO ref	--Posi‡ão central com dz = 0
+	MOVE RELATIVE VEC(0, 0, (4*(tam_sem+padz))) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	MOVE RELATIVE VEC(0, 0, -50) IN TOOL
+  
+  	-- Agulhamento esquerda:
+	MOVE RELATIVE VEC(0, pady, 0) IN TOOL
+	MOVE RELATIVE VEC(0, 0, 50) IN TOOL
+	MOVE RELATIVE VEC(0, 0, (4*(tam_sem+padz))) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	MOVE RELATIVE VEC(0, 0, -50) IN TOOL
+  
+  	-- Agulhamento direita: 
+	MOVE RELATIVE VEC(0, (-2*pady), 0) IN TOOL
+	MOVE RELATIVE VEC(0, 0, 50) IN TOOL
+	MOVE RELATIVE VEC(0, 0, (4*(tam_sem+padz))) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	INSERE
+	MOVE RELATIVE VEC(0, 0, -padz) IN TOOL
+	MOVE RELATIVE VEC(0, 0, -88) IN TOOL
+
+	-- Retorna para HOME:
+	MOVE TO home
+  
+END prog_imp_sem
